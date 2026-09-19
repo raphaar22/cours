@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Physique-Chimie · Terminale</title>
+  <meta name="description" content="Cours, vocabulaire, fiches résumé et cartes mémo de Physique-Chimie, Terminale spécialité.">
+  <meta name="theme-color" content="#fafaf8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#15171c" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Phys-Chimie">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icones/icone.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icones/icone-180.png">
+  <link rel="stylesheet" href="lib/katex/katex.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="lien-evitement" href="#contenu">Aller au contenu</a>
+
+  <header class="entete">
+    <div class="entete-int">
+      <a class="marque" href="#/" aria-label="Accueil">
+        <svg class="marque-logo" viewBox="0 0 32 32" aria-hidden="true"><path d="M12 4h8v2h-1v7.2l7.4 12.3A2 2 0 0 1 24.7 28H7.3a2 2 0 0 1-1.7-3.5L13 13.2V6h-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10.5 20h11" stroke="currentColor" stroke-width="2"/></svg>
+        <span>Physique-Chimie</span>
+      </a>
+      <nav class="entete-actions" aria-label="Actions">
+        <a class="bouton-icone" href="#/recherche" title="Rechercher" aria-label="Rechercher">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16.5 16.5 4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </a>
+        <button class="bouton-icone" id="bouton-theme" type="button" title="Changer de thème" aria-label="Changer de thème">
+          <svg class="icone-soleil" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <svg class="icone-lune" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenu" class="principal" tabindex="-1">
+    <p class="chargement">Chargement du cours…</p>
+  </main>
+
+  <footer class="pied">
+    <p>Cours d'après le manuel de Terminale spécialité · reformulé pour réviser. <span id="pied-etat"></span></p>
+  </footer>
+
+  <script src="lib/marked.js"></script>
+  <script src="lib/katex/katex.min.js"></script>
+  <script src="lib/katex/contrib/mhchem.min.js"></script>
+  <script src="lib/katex/contrib/auto-render.min.js"></script>
+  <script src="chapitres.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
