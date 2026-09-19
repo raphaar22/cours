@@ -18,7 +18,7 @@ const CHAPITRES = [
     titre: "Réactions acide-base",
     sousTitre: "Théorie de Brönsted, couples acide-base, espèces amphotères, écriture des équations",
     pages: "p. 38 à 41",
-    fichiers: ["cours", "vocabulaire", "fiche", "cartes"],
+    fichiers: ["cours", "vocabulaire", "fiche", "quiz", "cartes"],
   },
   {
     id: "chimie/02-methodes-physiques-analyse",
@@ -27,7 +27,7 @@ const CHAPITRES = [
     titre: "Méthodes physiques d'analyse d'un système chimique",
     sousTitre: "pH, spectroscopie UV-visible et IR, conductimétrie, dosage par étalonnage, gaz parfait",
     pages: "p. 62 à 67",
-    fichiers: ["cours", "vocabulaire", "fiche", "cartes"],
+    fichiers: ["cours", "vocabulaire", "fiche", "quiz", "cartes"],
   },
   {
     id: "annexes/donnees-utiles",

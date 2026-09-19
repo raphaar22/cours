@@ -334,6 +334,11 @@ h1 { font-size: 1.85rem; }
 
 /* ---------- Fiche ---------- */
 .fiche-outils { display: flex; justify-content: flex-end; margin-bottom: .5rem; }
+.message {
+  margin: 0 0 1rem; padding: .8rem 1rem; border-radius: 10px; font-size: .92rem;
+  background: var(--remarque-fond); border-left: 3px solid var(--remarque); color: var(--texte);
+}
+.message[hidden] { display: none; }
 .fiche .article h2 { font-size: 1.25rem; margin-top: 2rem; }
 .fiche .article h3 { font-size: 1.02rem; }
 
@@ -349,12 +354,20 @@ h1 { font-size: 1.85rem; }
 .barre .ok { background: var(--ok); height: 100%; }
 .barre .non { background: var(--non); height: 100%; }
 
-.carte-scene { perspective: 1400px; margin-bottom: 1rem; }
+.carte-pile { position: relative; perspective: 1400px; margin-bottom: 1.6rem; }
+.carte-enveloppe { transition: transform .3s cubic-bezier(.2, .7, .3, 1), opacity .3s ease; will-change: transform; }
+.carte-enveloppe.avant { position: relative; z-index: 2; }
+.carte-enveloppe.arriere {
+  position: absolute; inset: 0; z-index: 1; opacity: .92;
+  transform: scale(.94) translateY(20px); pointer-events: none;
+}
+.carte-enveloppe.arriere .carte { cursor: default; }
 .carte {
-  position: relative; display: grid; min-height: 15rem; cursor: pointer; border: 0; padding: 0; width: 100%; text-align: left;
+  position: relative; display: grid; min-height: 15rem; cursor: pointer; border: 0; padding: 0; width: 100%; height: 100%; text-align: left;
   transform-style: preserve-3d; transition: transform .45s cubic-bezier(.2, .8, .3, 1); background: transparent;
 }
 .carte.retournee { transform: rotateY(180deg); }
+.carte-enveloppe .face { height: 100%; }
 .carte .face {
   grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden;
   border-radius: 16px; border: 1px solid var(--ligne); background: var(--fond-2); box-shadow: var(--ombre);
@@ -543,11 +556,19 @@ h1 { font-size: 1.85rem; }
   .cartes-compteur { justify-content: space-between; }
   .carte { min-height: 17rem; }
   .carte .face { padding: 1.5rem 1.2rem 2rem; font-size: 1.05rem; }
-  .carte-scene { touch-action: pan-y; }
-  .carte-scene.glisse .carte { transition: none; }
+  .carte-pile { touch-action: pan-y; }
   .cartes-reponses .bouton { padding: .85rem 1rem; font-size: 1rem; }
   .cartes-nav { display: none; }
   .cartes-astuce { margin: .9rem 0 0; text-align: center; font-size: .8rem; color: var(--texte-3); }
+
+  .quiz { max-width: none; }
+  .quiz-tete { flex-direction: column; align-items: stretch; gap: .5rem; }
+  .quiz-carte { padding: 1rem 1rem 1.1rem; border-radius: 14px; }
+  .quiz-question { font-size: 1.04rem; }
+  .quiz-saisie { flex-direction: column; }
+  .quiz-saisie .bouton { width: 100%; padding: .8rem; }
+  .barre-onglets a { font-size: .64rem; }
+  .barre-onglets a svg { width: 22px; height: 22px; }
 
   /* --- Divers --- */
   [id] { scroll-margin-top: 4rem; }
@@ -556,10 +577,66 @@ h1 { font-size: 1.85rem; }
   .recherche-forme .bouton { width: 100%; }
 }
 
+/* ---------- Quiz ---------- */
+.quiz { max-width: 42rem; margin: 0 auto; }
+.quiz-tete { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.quiz-compteur { display: flex; gap: .75rem; flex-wrap: wrap; font-size: .9rem; color: var(--texte-2); }
+.quiz-compteur .ok { color: var(--ok); }
+.quiz-compteur .non { color: var(--non); }
+
+.quiz-carte {
+  border: 1px solid var(--ligne); border-radius: 16px; background: var(--fond-2);
+  padding: 1.2rem 1.3rem 1.3rem; box-shadow: var(--ombre);
+}
+.quiz-etiquette {
+  display: inline-block; margin-bottom: .6rem; font-size: .72rem; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--texte-3);
+}
+.quiz-etiquette.piege { color: var(--remarque); }
+.quiz-question { font-size: 1.08rem; line-height: 1.5; }
+.quiz-question > :last-child { margin-bottom: 1rem; }
+
+.quiz-choix { display: grid; gap: .5rem; }
+.quiz-choix-bouton {
+  display: flex; align-items: center; gap: .75rem; width: 100%; text-align: left;
+  padding: .8rem .9rem; border-radius: 12px; border: 1px solid var(--ligne);
+  background: var(--fond); color: var(--texte); cursor: pointer; font: inherit;
+  transition: background .12s ease, border-color .12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.quiz-choix-bouton:hover:not([disabled]) { background: var(--fond-3); }
+.quiz-choix-bouton[disabled] { cursor: default; opacity: .75; }
+.quiz-lettre {
+  flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--fond-3); color: var(--texte-2); font-size: .82rem; font-weight: 700;
+}
+.quiz-choix-bouton.juste { border-color: var(--ok); background: var(--ok-fond); opacity: 1; }
+.quiz-choix-bouton.juste .quiz-lettre { background: var(--ok); color: #fff; }
+.quiz-choix-bouton.faux { border-color: var(--non); background: var(--non-fond); opacity: 1; }
+.quiz-choix-bouton.faux .quiz-lettre { background: var(--non); color: #fff; }
+
+.quiz-saisie { display: flex; gap: .5rem; }
+.quiz-saisie .champ { flex: 1; }
+.quiz-saisie .champ.juste { border-color: var(--ok); background: var(--ok-fond); color: var(--texte); }
+.quiz-saisie .champ.faux { border-color: var(--non); background: var(--non-fond); color: var(--texte); }
+
+.quiz-verdict {
+  margin: 1.1rem 0 .6rem; padding: .7rem .9rem; border-radius: 10px; font-size: .95rem;
+}
+.quiz-verdict.juste { background: var(--ok-fond); color: var(--ok); }
+.quiz-verdict.faux { background: var(--non-fond); color: var(--non); }
+.quiz-verdict em { font-style: normal; font-weight: 650; }
+.quiz-explication { font-size: .95rem; color: var(--texte-2); line-height: 1.55; }
+.quiz-explication > :last-child { margin-bottom: 0; }
+.quiz-explication strong { color: var(--texte); }
+.quiz-suite { margin-top: 1.1rem; }
+.quiz-suite .bouton { width: 100%; padding: .8rem 1rem; }
+
 /* ---------- Impression ---------- */
 @media print {
   .entete, .pied, .onglets, .sommaire, .fiche-outils, .fil, .cartes-outils, .cartes-reponses, .cartes-nav,
-  .barre-onglets, .bouton-haut, .barre-progression, .plan-outils { display: none !important; }
+  .barre-onglets, .bouton-haut, .barre-progression, .plan-outils, .message, .quiz-tete, .quiz-suite { display: none !important; }
   details.section, .section-corps { border: 0; padding: 0; background: transparent; }
   details.section > summary::before { display: none; }
   body { background: #fff; color: #000; font-size: 11pt; }

@@ -4,7 +4,7 @@
 
 importScripts("chapitres.js");
 
-const VERSION = "v2";
+const VERSION = "v3";
 const CACHE = "physique-chimie-" + VERSION;
 
 const FICHIERS_STATIQUES = [

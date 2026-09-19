@@ -23,6 +23,7 @@ Cours-Physique-Chimie/
         cours.js        ← le cours long (Markdown)
         vocabulaire.js  ← liste de termes { terme, definition }
         fiche.js        ← la fiche résumé (Markdown)
+        quiz.js         ← les questions du quiz (QCM et exercices)
         cartes.js       ← les cartes mémo { q, r }
       02-methodes-physiques-analyse/ …
     physique/  (vide pour l'instant)
@@ -32,7 +33,7 @@ Cours-Physique-Chimie/
 ## Ajouter un chapitre
 
 1. Créer un dossier `contenu/chimie/03-nom-du-chapitre/` (ou `contenu/physique/…`).
-2. Y mettre `cours.js`, `vocabulaire.js`, `fiche.js`, `cartes.js` sur le modèle des chapitres existants
+2. Y mettre `cours.js`, `vocabulaire.js`, `fiche.js`, `quiz.js`, `cartes.js` sur le modèle des chapitres existants
    (l'identifiant passé à `definirContenu(...)` doit être `chimie/03-nom-du-chapitre`).
 3. Ajouter le chapitre dans `chapitres.js`.
 
@@ -53,3 +54,22 @@ Texte de la définition.
 
 Formules mathématiques : `$…$` dans le texte, `$$…$$` centrées (syntaxe LaTeX/KaTeX).
 Formules chimiques : écrire directement les indices en Unicode (H₃O⁺, CO₃²⁻, HCO₃⁻).
+
+## Écrire les questions du quiz
+
+Deux types de questions, dans `quiz.js` :
+
+```js
+{ type: "qcm", q: "La question ?", choix: ["A", "B", "C", "D"], bonne: 0,
+  explication: "Pourquoi c'est A.", piege: true }   // piege est facultatif
+
+{ type: "saisie", q: "La question ?",
+  reponses: ["ch3coo-", "ion ethanoate", "ethanoate"],  // toutes les formulations acceptées
+  solution: "CH₃–COO⁻ (l'ion éthanoate)",               // ce qui s'affiche si c'est faux
+  explication: "La correction de l'exercice." }
+```
+
+Pour les questions à saisie, la comparaison ignore les accents, les espaces, les tirets,
+les articles (le, la, l', un…) et les états physiques (aq), (s), (g), (ℓ). Les nombres sont
+comparés par leur valeur : « 1,0 × 10⁻³ », « 0,001 » et « 1e-3 » sont donc équivalents.
+Il reste utile de lister plusieurs formulations dans `reponses` (nom de l'ion, formule…).

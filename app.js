@@ -13,6 +13,7 @@
     vocabulaire: "Vocabulaire",
     fiche: "Fiche",
     cartes: "Cartes",
+    quiz: "Quiz",
     donnees: "Données",
   };
   const TITRES_BLOCS = {
@@ -198,9 +199,10 @@
     vocabulaire: '<path d="M4 6h3M4 12h3M4 18h3M10 6h10M10 12h10M10 18h10" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
     fiche: '<path d="M6 3h9l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M14 3v5h5M9 13h7M9 17h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
     cartes: '<rect x="3" y="7" width="13" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 4h10a3 3 0 0 1 3 3v9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
+    quiz: '<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.2 2.4c-.5.2-.8.7-.8 1.2v.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="16.6" r="1.05" fill="currentColor"/>',
     donnees: '<rect x="3.5" y="4.5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M3.5 9.5h17M9.5 9.5V20M3.5 15h17" fill="none" stroke="currentColor" stroke-width="1.9"/>',
   };
-  const COURTS = { cours: "Cours", vocabulaire: "Vocab", fiche: "Fiche", cartes: "Cartes", donnees: "Données" };
+  const COURTS = { cours: "Cours", vocabulaire: "Vocab", fiche: "Fiche", quiz: "Quiz", cartes: "Cartes", donnees: "Données" };
 
   function majBarreOnglets(chap, type) {
     const barre = document.getElementById("barre-onglets");
@@ -232,6 +234,34 @@
   }
   window.addEventListener("scroll", majProgression, { passive: true });
   window.addEventListener("resize", majProgression);
+
+  /* ---------- Impression : même rendu sur téléphone et sur ordinateur ---------- */
+  let replieesAvantImpression = [];
+  function deplierPourImpression() {
+    replieesAvantImpression = Array.prototype.slice.call(document.querySelectorAll("details:not([open])"));
+    replieesAvantImpression.forEach(function (d) { d.open = true; });
+  }
+  function replierApresImpression() {
+    replieesAvantImpression.forEach(function (d) { d.open = false; });
+    replieesAvantImpression = [];
+  }
+  window.addEventListener("beforeprint", deplierPourImpression);
+  window.addEventListener("afterprint", replierApresImpression);
+
+  /* Installée sur l'écran d'accueil, iOS n'autorise pas l'impression : on passe par Safari. */
+  function appliInstallee() {
+    return (window.navigator.standalone === true)
+      || window.matchMedia("(display-mode: standalone)").matches;
+  }
+  function imprimer() {
+    if (appliInstallee()) {
+      const message = document.getElementById("message-impression");
+      if (message) { message.hidden = false; return; }
+    }
+    deplierPourImpression();
+    window.print();
+    setTimeout(replierApresImpression, 1500);
+  }
 
   /* ---------- Plan repliable (téléphone) ---------- */
   function construireAccordeon(article) {
@@ -426,6 +456,7 @@
     else if (type === "vocabulaire") afficherVocabulaire(zone, valeur);
     else if (type === "fiche") afficherFiche(zone, chap, valeur, section);
     else if (type === "cartes") afficherCartes(zone, chap, valeur);
+    else if (type === "quiz") afficherQuiz(zone, chap, valeur);
   }
 
   function afficherCours(zone, chap, type, markdown, section) {
@@ -537,6 +568,8 @@
   /* ---------- Fiche résumé ---------- */
   function afficherFiche(zone, chap, markdown, section) {
     zone.innerHTML = '<div class="fiche"><div class="fiche-outils"><button class="bouton bouton-petit" type="button" id="imprimer">Imprimer / PDF</button></div>' +
+      '<p class="message" id="message-impression" hidden>Depuis l\'application installée sur l\'écran d\'accueil, iOS n\'autorise pas l\'impression. ' +
+      'Ouvre <a href="' + location.href + '" target="_blank" rel="noopener">cette page dans Safari</a>, puis Partager → Imprimer pour obtenir le PDF.</p>' +
       '<div class="cours-grille"><details class="sommaire" id="sommaire"><summary>Sommaire</summary></details><article class="article" id="article"></article></div></div>';
     const article = document.getElementById("article");
     article.innerHTML = rendreMarkdown(markdown);
@@ -554,7 +587,7 @@
         if (ancien) ancien.remove();
       }
     }
-    document.getElementById("imprimer").addEventListener("click", function () { window.print(); });
+    document.getElementById("imprimer").addEventListener("click", imprimer);
     allerA(section);
     majProgression();
   }
@@ -611,7 +644,38 @@
       const pNon = n.total ? (100 * n.non / n.total) : 0;
       document.getElementById("barre").innerHTML = '<div class="ok" style="width:' + pOk + '%"></div><div class="non" style="width:' + pNon + '%"></div>';
     }
-    function dessinerCarte() {
+    function reduitMouvement() {
+      return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    }
+
+    /* Une carte : recto question, verso réponse. La carte du dessus est cliquable. */
+    function htmlCarte(c, devant) {
+      const etat = etats[c.cle];
+      const badge = etat === "su" ? '<span class="etat ok">Sue</span>'
+        : etat === "revoir" ? '<span class="etat non">À revoir</span>' : "";
+      const balise = devant ? "button" : "div";
+      return "<" + balise + ' class="carte"' + (devant ? ' id="carte" type="button" aria-label="Retourner la carte"' : ' aria-hidden="true"') + ">" +
+        '<div class="face face-recto"><span class="etiquette">Question</span>' + badge +
+        "<div>" + rendreMarkdown(c.q) + "</div>" +
+        (devant ? '<span class="indice">Toucher pour retourner</span>' : "") + "</div>" +
+        '<div class="face face-verso"><span class="etiquette">Réponse</span><div>' + rendreMarkdown(c.r) + "</div></div>" +
+        "</" + balise + ">";
+    }
+
+    function finSerie() {
+      dessinerCompteur();
+      const n = compter();
+      scene.innerHTML = '<div class="cartes-fin"><h3>Fin de la série</h3><p>' + n.ok + " sue" + (n.ok > 1 ? "s" : "") + ", " + n.non + " à revoir." +
+        '</p><p><button class="bouton bouton-primaire" type="button" id="recommencer">Recommencer</button> ' +
+        (n.non ? '<button class="bouton" type="button" id="revoir-seulement">Revoir les ' + n.non + " à revoir</button>" : "") + "</p></div>";
+      document.getElementById("recommencer").addEventListener("click", function () { position = 0; dessinerCarte(); });
+      const b = document.getElementById("revoir-seulement");
+      if (b) b.addEventListener("click", function () {
+        seulementARevoir = true; document.getElementById("filtre-revoir").checked = true; position = 0; dessinerCarte();
+      });
+    }
+
+    function dessinerCarte(entree) {
       const l = liste();
       dessinerCompteur();
       if (!l.length) {
@@ -621,71 +685,114 @@
       }
       if (position >= l.length) position = l.length - 1;
       const c = l[position];
-      const etat = etats[c.cle];
-      const badge = etat === "su" ? '<span class="etat ok">Sue</span>' : etat === "revoir" ? '<span class="etat non">À revoir</span>' : "";
+      const suivante = l[position + 1];
       scene.innerHTML =
-        '<div class="carte-scene"><button class="carte' + (retournee ? " retournee" : "") + '" type="button" id="carte" aria-label="Retourner la carte">' +
-        '<div class="face face-recto"><span class="etiquette">Question</span>' + badge + '<div>' + rendreMarkdown(c.q) + '</div><span class="indice">Toucher pour retourner</span></div>' +
-        '<div class="face face-verso"><span class="etiquette">Réponse</span><div>' + rendreMarkdown(c.r) + "</div></div>" +
-        "</button></div>" +
+        '<div class="carte-pile">' +
+        (suivante ? '<div class="carte-enveloppe arriere" id="arriere">' + htmlCarte(suivante, false) + "</div>" : "") +
+        '<div class="carte-enveloppe avant" id="avant">' + htmlCarte(c, true) + "</div>" +
+        "</div>" +
         '<div class="cartes-reponses"><button class="bouton bouton-non" type="button" id="non">À revoir</button><button class="bouton bouton-ok" type="button" id="ok">Je sais</button></div>' +
         '<div class="cartes-nav"><button class="bouton bouton-petit" type="button" id="precedent"' + (position === 0 ? " disabled" : "") + '>← Précédente</button>' +
         '<span class="aide">Espace : retourner · 1 : à revoir · 2 : je sais</span>' +
         '<button class="bouton bouton-petit" type="button" id="suivant"' + (position >= l.length - 1 ? " disabled" : "") + ">Suivante →</button></div>" +
         (estMobile() ? '<p class="cartes-astuce">Touche la carte pour la retourner · balaye pour changer de carte</p>' : "");
       rendreFormules(scene);
-      installerBalayage(scene.querySelector(".carte-scene"), document.getElementById("carte"));
-      document.getElementById("carte").addEventListener("click", retourner);
+      const avant = document.getElementById("avant");
+      const carte = document.getElementById("carte");
+      if (retournee) carte.classList.add("retournee");
+      installerBalayage(avant, carte);
+      carte.addEventListener("click", retourner);
       document.getElementById("non").addEventListener("click", function () { marquer("revoir"); });
       document.getElementById("ok").addEventListener("click", function () { marquer("su"); });
-      document.getElementById("precedent").addEventListener("click", function () { aller(position - 1); });
-      document.getElementById("suivant").addEventListener("click", function () { aller(position + 1); });
+      document.getElementById("precedent").addEventListener("click", function () { aller(position - 1, true); });
+      document.getElementById("suivant").addEventListener("click", function () { aller(position + 1, true); });
+      if (entree && !reduitMouvement()) {
+        avant.style.transition = "none";
+        avant.style.transform = "translateX(-115%) rotate(-8deg)";
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () { avant.style.transition = ""; avant.style.transform = ""; });
+        });
+      }
     }
+
+    /* Envoie la carte du dessus hors de l'écran, la suivante prend sa place. */
+    function envoyer(direction, apres) {
+      const avant = document.getElementById("avant");
+      if (!avant || reduitMouvement()) { apres(); return; }
+      const arriere = document.getElementById("arriere");
+      avant.style.transition = "transform .3s cubic-bezier(.4,0,.8,.4), opacity .3s ease-in";
+      avant.style.transform = "translateX(" + (direction * 125) + "%) rotate(" + (direction * 13) + "deg)";
+      avant.style.opacity = "0";
+      if (arriere) {
+        arriere.style.transition = "transform .3s cubic-bezier(.2,.7,.3,1), opacity .3s ease-out";
+        arriere.style.transform = "none";
+        arriere.style.opacity = "1";
+      }
+      setTimeout(apres, 285);
+    }
+
     function retourner() {
       retournee = !retournee;
       document.getElementById("carte").classList.toggle("retournee", retournee);
     }
 
-    /* Balayer vers la gauche : carte suivante ; vers la droite : précédente. */
-    function installerBalayage(scene2, carte) {
-      if (!scene2 || !carte) return;
+    /* Balayage : la carte suit le doigt, puis part si le geste est assez ample. */
+    function installerBalayage(avant, carte) {
+      if (!avant || !carte) return;
+      const arriere = document.getElementById("arriere");
       let x0 = 0, y0 = 0, dx = 0, actif = false, glisse = false;
-      scene2.addEventListener("touchstart", function (e) {
+
+      avant.addEventListener("touchstart", function (e) {
         if (e.touches.length !== 1) return;
         x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
         dx = 0; actif = true; glisse = false;
       }, { passive: true });
-      scene2.addEventListener("touchmove", function (e) {
+
+      avant.addEventListener("touchmove", function (e) {
         if (!actif) return;
         dx = e.touches[0].clientX - x0;
         const dy = e.touches[0].clientY - y0;
-        if (!glisse && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) {
+        if (!glisse && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
           glisse = true;
-          scene2.classList.add("glisse");
+          avant.style.transition = "none";
+          if (arriere) arriere.style.transition = "none";
         }
-        if (glisse) carte.style.transform = (retournee ? "rotateY(180deg) " : "") + "translateX(" + (dx / 2.2) + "px)";
+        if (!glisse) return;
+        avant.style.transform = "translateX(" + dx + "px) rotate(" + (dx / 26) + "deg)";
+        const p = Math.min(Math.abs(dx) / 140, 1);
+        if (arriere) arriere.style.transform = "scale(" + (0.94 + 0.06 * p) + ") translateY(" + (20 - 20 * p) + "px)";
       }, { passive: true });
-      scene2.addEventListener("touchend", function () {
+
+      avant.addEventListener("touchend", function () {
         if (!actif) return;
         actif = false;
-        scene2.classList.remove("glisse");
-        carte.style.transform = "";
         if (!glisse) return;
-        const l = liste();
-        if (dx < -55 && position < l.length - 1) aller(position + 1);
-        else if (dx > 55 && position > 0) aller(position - 1);
         /* Un balayage ne doit pas retourner la carte */
         carte.addEventListener("click", function bloque(ev) {
           ev.stopPropagation(); ev.preventDefault();
           carte.removeEventListener("click", bloque, true);
         }, true);
-        setTimeout(function () { glisse = false; }, 0);
+        const l = liste();
+        avant.style.transition = "";
+        if (arriere) arriere.style.transition = "";
+        if (dx < -60 && position < l.length - 1) { aller(position + 1, true); return; }
+        if (dx > 60 && position > 0) { aller(position - 1, true); return; }
+        /* Geste trop court : la carte revient en place */
+        avant.style.transform = "";
+        if (arriere) arriere.style.transform = "";
       });
     }
-    function aller(p) {
+
+    function aller(p, anime) {
       const l = liste();
       if (p < 0 || p >= l.length) return;
-      position = p; retournee = false; dessinerCarte();
+      if (anime && p === position + 1) {
+        envoyer(-1, function () { position = p; retournee = false; dessinerCarte(); });
+      } else if (anime && p === position - 1) {
+        envoyer(1, function () { position = p; retournee = false; dessinerCarte(); });
+      } else {
+        position = p; retournee = false; dessinerCarte();
+      }
     }
     function marquer(valeur) {
       const l = liste();
@@ -693,22 +800,9 @@
       etats[l[position].cle] = valeur;
       ecrireEtats(chap, etats);
       retournee = false;
-      if (seulementARevoir && valeur === "su") { dessinerCarte(); return; }
-      if (position < l.length - 1) position++;
-      else {
-        dessinerCompteur();
-        const n = compter();
-        scene.innerHTML = '<div class="cartes-fin"><h3>Fin de la série</h3><p>' + n.ok + " sue" + (n.ok > 1 ? "s" : "") + ", " + n.non + " à revoir." +
-          '</p><p><button class="bouton bouton-primaire" type="button" id="recommencer">Recommencer</button> ' +
-          (n.non ? '<button class="bouton" type="button" id="revoir-seulement">Revoir les ' + n.non + " à revoir</button>" : "") + "</p></div>";
-        document.getElementById("recommencer").addEventListener("click", function () { position = 0; dessinerCarte(); });
-        const b = document.getElementById("revoir-seulement");
-        if (b) b.addEventListener("click", function () {
-          seulementARevoir = true; document.getElementById("filtre-revoir").checked = true; position = 0; dessinerCarte();
-        });
-        return;
-      }
-      dessinerCarte();
+      if (seulementARevoir && valeur === "su") { envoyer(-1, function () { dessinerCarte(); }); return; }
+      if (position < l.length - 1) { envoyer(-1, function () { position++; dessinerCarte(); }); return; }
+      envoyer(-1, finSerie);
     }
     function melanger() {
       for (let i = ordre.length - 1; i > 0; i--) {
@@ -736,6 +830,209 @@
       else if (e.key === "ArrowRight") aller(position + 1);
     });
     dessinerCarte();
+  }
+
+  /* ---------- Quiz : QCM et petits exercices à faire de tête ---------- */
+  function lireEtatsQuiz(chap) {
+    try { return JSON.parse(localStorage.getItem("quiz:" + chap.id) || "{}"); } catch (e) { return {}; }
+  }
+  function ecrireEtatsQuiz(chap, etats) {
+    try { localStorage.setItem("quiz:" + chap.id, JSON.stringify(etats)); } catch (e) { /* stockage indisponible */ }
+  }
+
+  /* Un nombre écrit de n'importe quelle façon : 3,2 × 10⁻³ · 3.2e-3 · 0,0032 */
+  function versNombre(texte) {
+    const t = normaliser(texte).replace(/\s/g, "").replace(/,/g, ".")
+      .replace(/x10\^?/g, "e").replace(/\*10\^?/g, "e");
+    return /^-?\d+(\.\d+)?(e-?\+?\d+)?$/.test(t) ? Number(t) : null;
+  }
+  /* Comparaison souple : accents, espaces, tirets, articles et états physiques ignorés */
+  function normaliserReponse(texte) {
+    return normaliser(texte)
+      .replace(/\((aq|s|g|l)\)/g, "")
+      .replace(/^(les|le|la|l|un|une|des|de|d)\s+/, "")
+      .replace(/[\s'’\-–—_.,;:!?()]/g, "");
+  }
+  function reponseJuste(donnee, attendues) {
+    const n = versNombre(donnee);
+    for (let i = 0; i < attendues.length; i++) {
+      const a = attendues[i];
+      const na = versNombre(a);
+      if (n !== null && na !== null) {
+        if (Math.abs(n - na) <= Math.max(Math.abs(na) * 0.011, 1e-12)) return true;
+      } else if (normaliserReponse(donnee) === normaliserReponse(a)) return true;
+    }
+    return false;
+  }
+
+  function afficherQuiz(zone, chap, questions) {
+    const toutes = questions.map(function (q, i) {
+      const copie = {};
+      Object.keys(q).forEach(function (k) { copie[k] = q[k]; });
+      copie.cle = hacher(q.q);
+      copie.rang = i;
+      return copie;
+    });
+    let etats = lireEtatsQuiz(chap);
+    let ordre = toutes.slice();
+    let position = 0;
+    let seulementRatees = false;
+    let serie = { juste: 0, faites: 0 };
+
+    zone.innerHTML =
+      '<div class="quiz">' +
+      '<div class="quiz-tete"><div class="quiz-compteur" id="quiz-compteur"></div>' +
+      '<div class="cartes-actions"><label><input type="checkbox" id="filtre-ratees"> ' + (estMobile() ? "Ratées" : "Seulement les ratées") + '</label>' +
+      '<button class="bouton bouton-petit" type="button" id="quiz-melanger">Mélanger</button>' +
+      '<button class="bouton bouton-petit" type="button" id="quiz-reset">Réinitialiser</button></div></div>' +
+      '<div class="barre" id="quiz-barre"></div>' +
+      '<div id="quiz-zone"></div></div>';
+
+    const zoneQ = document.getElementById("quiz-zone");
+
+    function liste() {
+      return seulementRatees ? ordre.filter(function (q) { return etats[q.cle] === "faux"; }) : ordre;
+    }
+    function compter() {
+      let ok = 0, faux = 0;
+      toutes.forEach(function (q) { if (etats[q.cle] === "ok") ok++; else if (etats[q.cle] === "faux") faux++; });
+      return { ok: ok, faux: faux, total: toutes.length };
+    }
+    function dessinerCompteur() {
+      const n = compter();
+      const l = liste();
+      document.getElementById("quiz-compteur").innerHTML =
+        "<span>Question " + (l.length ? Math.min(position + 1, l.length) : 0) + " / " + l.length + "</span>" +
+        '<span class="ok">' + n.ok + " réussie" + (n.ok > 1 ? "s" : "") + "</span>" +
+        '<span class="non">' + n.faux + " à refaire</span>";
+      const pOk = n.total ? (100 * n.ok / n.total) : 0;
+      const pFaux = n.total ? (100 * n.faux / n.total) : 0;
+      document.getElementById("quiz-barre").innerHTML =
+        '<div class="ok" style="width:' + pOk + '%"></div><div class="non" style="width:' + pFaux + '%"></div>';
+    }
+
+    function dessiner() {
+      const l = liste();
+      dessinerCompteur();
+      if (!l.length) {
+        zoneQ.innerHTML = '<div class="cartes-fin"><h3>' + (seulementRatees ? "Rien à refaire !" : "Aucune question") + "</h3><p>" +
+          (seulementRatees ? "Tu as repris toutes les questions ratées. Décoche le filtre pour refaire la série entière." : "") + "</p></div>";
+        return;
+      }
+      if (position >= l.length) position = l.length - 1;
+      const q = l[position];
+      const etiquette = q.type === "saisie" ? "Exercice" : (q.piege ? "Attention au piège" : "Question");
+      let html = '<div class="quiz-carte"><span class="quiz-etiquette' + (q.piege ? " piege" : "") + '">' + etiquette + "</span>" +
+        '<div class="quiz-question">' + rendreMarkdown(q.q) + "</div>";
+      if (q.type === "saisie") {
+        html += '<form class="quiz-saisie" id="quiz-forme" autocomplete="off">' +
+          '<input class="champ" type="text" id="quiz-champ" placeholder="Ta réponse…" aria-label="Ta réponse" ' +
+          'autocapitalize="off" autocorrect="off" spellcheck="false">' +
+          '<button class="bouton bouton-primaire" type="submit">Valider</button></form>';
+      } else {
+        html += '<div class="quiz-choix" id="quiz-choix">' + q.choix.map(function (c, i) {
+          return '<button class="quiz-choix-bouton" type="button" data-i="' + i + '">' +
+            '<span class="quiz-lettre">' + "ABCDEF".charAt(i) + "</span><span>" + rendreEnLigne(c) + "</span></button>";
+        }).join("") + "</div>";
+      }
+      html += '<div id="quiz-retour"></div></div>';
+      zoneQ.innerHTML = html;
+      rendreFormules(zoneQ);
+
+      if (q.type === "saisie") {
+        document.getElementById("quiz-forme").addEventListener("submit", function (e) {
+          e.preventDefault();
+          const donnee = document.getElementById("quiz-champ").value.trim();
+          if (!donnee) return;
+          corriger(q, reponseJuste(donnee, q.reponses), donnee);
+        });
+      } else {
+        Array.prototype.forEach.call(document.querySelectorAll(".quiz-choix-bouton"), function (b) {
+          b.addEventListener("click", function () { corriger(q, Number(b.dataset.i) === q.bonne, null, Number(b.dataset.i)); });
+        });
+      }
+    }
+
+    function corriger(q, juste, donnee, choisi) {
+      etats[q.cle] = juste ? "ok" : "faux";
+      ecrireEtatsQuiz(chap, etats);
+      serie.faites++;
+      if (juste) serie.juste++;
+      dessinerCompteur();
+
+      if (q.type === "saisie") {
+        const champ = document.getElementById("quiz-champ");
+        champ.disabled = true;
+        champ.classList.add(juste ? "juste" : "faux");
+        document.querySelector("#quiz-forme button").hidden = true;
+      } else {
+        Array.prototype.forEach.call(document.querySelectorAll(".quiz-choix-bouton"), function (b) {
+          const i = Number(b.dataset.i);
+          b.disabled = true;
+          if (i === q.bonne) b.classList.add("juste");
+          else if (i === choisi) b.classList.add("faux");
+        });
+      }
+
+      const solution = q.type === "saisie" ? (q.solution || q.reponses[0]) : q.choix[q.bonne];
+      const l = liste();
+      const dernier = position >= l.length - 1;
+      document.getElementById("quiz-retour").innerHTML =
+        '<div class="quiz-verdict ' + (juste ? "juste" : "faux") + '">' +
+        "<strong>" + (juste ? "Bonne réponse" : "Faux") + "</strong>" +
+        (juste ? "" : " — la réponse attendue était : <em>" + rendreEnLigne(solution) + "</em>") + "</div>" +
+        '<div class="quiz-explication">' + rendreMarkdown(q.explication) + "</div>" +
+        '<div class="quiz-suite"><button class="bouton bouton-primaire" type="button" id="quiz-suivante">' +
+        (dernier ? "Voir le résultat" : "Question suivante →") + "</button></div>";
+      rendreFormules(document.getElementById("quiz-retour"));
+      const suivante = document.getElementById("quiz-suivante");
+      suivante.addEventListener("click", function () {
+        if (dernier) { finQuiz(); return; }
+        position++; dessiner();
+        zoneQ.scrollIntoView({ block: "start", behavior: "smooth" });
+      });
+      suivante.focus({ preventScroll: true });
+    }
+
+    function finQuiz() {
+      dessinerCompteur();
+      const n = compter();
+      const note = serie.faites ? Math.round(100 * serie.juste / serie.faites) : 0;
+      let mot = "À retravailler";
+      if (note >= 90) mot = "Excellent";
+      else if (note >= 70) mot = "Bien";
+      else if (note >= 50) mot = "Moyen";
+      zoneQ.innerHTML = '<div class="cartes-fin"><h3>' + serie.juste + " / " + serie.faites + " — " + mot + "</h3>" +
+        "<p>Sur l'ensemble du chapitre : " + n.ok + " question" + (n.ok > 1 ? "s" : "") + " réussie" + (n.ok > 1 ? "s" : "") +
+        ", " + n.faux + " à refaire.</p>" +
+        '<p><button class="bouton bouton-primaire" type="button" id="quiz-recommencer">Recommencer</button> ' +
+        (n.faux ? '<button class="bouton" type="button" id="quiz-ratees">Refaire les ' + n.faux + " ratée" + (n.faux > 1 ? "s" : "") + "</button>" : "") + "</p></div>";
+      document.getElementById("quiz-recommencer").addEventListener("click", function () {
+        position = 0; serie = { juste: 0, faites: 0 }; dessiner();
+      });
+      const b = document.getElementById("quiz-ratees");
+      if (b) b.addEventListener("click", function () {
+        seulementRatees = true; document.getElementById("filtre-ratees").checked = true;
+        position = 0; serie = { juste: 0, faites: 0 }; dessiner();
+      });
+    }
+
+    document.getElementById("filtre-ratees").addEventListener("change", function () {
+      seulementRatees = this.checked; position = 0; serie = { juste: 0, faites: 0 }; dessiner();
+    });
+    document.getElementById("quiz-melanger").addEventListener("click", function () {
+      for (let i = ordre.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const t = ordre[i]; ordre[i] = ordre[j]; ordre[j] = t;
+      }
+      position = 0; serie = { juste: 0, faites: 0 }; dessiner();
+    });
+    document.getElementById("quiz-reset").addEventListener("click", function () {
+      if (!confirm("Effacer ta progression sur le quiz de ce chapitre ?")) return;
+      etats = {}; ecrireEtatsQuiz(chap, etats); position = 0; serie = { juste: 0, faites: 0 }; dessiner();
+    });
+
+    dessiner();
   }
 
   /* ---------- Recherche ---------- */
@@ -795,6 +1092,14 @@
             const brut = texteBrut(t.terme + " — " + t.definition);
             const idx = normaliser(brut).indexOf(q);
             if (idx >= 0) resultats.push({ ou: "Vocabulaire", lien: lienChapitre(chap, type), extrait: extraireNormalise(brut, q, idx, requete) });
+          });
+        } else if (type === "quiz") {
+          let trouves = 0;
+          valeur.forEach(function (question) {
+            if (trouves >= 3) return;
+            const brut = texteBrut(question.q + " " + (question.explication || ""));
+            const idx = normaliser(brut).indexOf(q);
+            if (idx >= 0) { trouves++; resultats.push({ ou: "Quiz", lien: lienChapitre(chap, type), extrait: extraireNormalise(brut, q, idx, requete) }); }
           });
         } else if (type === "cartes") {
           let trouves = 0;
