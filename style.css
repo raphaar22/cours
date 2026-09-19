@@ -340,7 +340,7 @@ h1 { font-size: 1.85rem; }
 /* ---------- Cartes mémo ---------- */
 .cartes { max-width: 40rem; margin: 0 auto; }
 .cartes-outils { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-.cartes-outils .groupe { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.cartes-outils .cartes-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
 .cartes-outils label { display: inline-flex; align-items: center; gap: .4rem; font-size: .92rem; color: var(--texte-2); cursor: pointer; }
 .cartes-compteur { font-size: .9rem; color: var(--texte-2); display: flex; gap: .75rem; flex-wrap: wrap; }
 .cartes-compteur .ok { color: var(--ok); }
@@ -406,9 +406,162 @@ h1 { font-size: 1.85rem; }
   .carte-chapitre { transition: none; }
 }
 
+/* ============================================================
+   TÉLÉPHONE (écrans de moins de 980 px)
+   Barre d'onglets en bas, sections repliables, tableaux empilés,
+   barre de progression, bouton de remontée.
+   Rien de tout cela n'apparaît sur ordinateur.
+   ============================================================ */
+
+.barre-onglets, .bouton-haut { display: none; }
+.barre-progression { display: none; }
+
+@media (max-width: 979px) {
+
+  /* --- En-tête allégé : on gagne un demi-écran --- */
+  .fil { display: none; }
+  .chapitre-tete { margin-bottom: .25rem; }
+  .chapitre-tete h1 { font-size: 1.35rem; }
+  .chapitre-tete .sous-titre { font-size: .88rem; margin-top: .25rem; }
+  .principal { padding-top: 1rem; }
+  .onglets { display: none; }          /* remplacés par la barre du bas */
+  .sommaire { display: none; }         /* remplacé par le plan repliable */
+
+  /* --- Barre de progression de lecture --- */
+  .barre-progression {
+    display: block; position: fixed; top: 0; left: 0; right: 0; height: 3px;
+    z-index: 25; background: transparent; pointer-events: none;
+  }
+  .barre-progression span {
+    display: block; height: 100%; width: 0; background: var(--accent);
+    transition: width .1s linear;
+  }
+
+  /* --- Barre d'onglets fixe en bas --- */
+  body.avec-barre { padding-bottom: calc(4.3rem + env(safe-area-inset-bottom, 0px)); }
+  .barre-onglets {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    background: color-mix(in srgb, var(--fond) 90%, transparent);
+    -webkit-backdrop-filter: saturate(170%) blur(14px);
+    backdrop-filter: saturate(170%) blur(14px);
+    border-top: 1px solid var(--ligne);
+    padding: .3rem .15rem calc(.3rem + env(safe-area-inset-bottom, 0px));
+  }
+  .barre-onglets[hidden] { display: none; }
+  .barre-onglets a {
+    flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center;
+    gap: .12rem; padding: .35rem .1rem; color: var(--texte-3);
+    font-size: .67rem; font-weight: 550; text-align: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .barre-onglets a:hover { text-decoration: none; }
+  .barre-onglets a svg { width: 23px; height: 23px; }
+  .barre-onglets a span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+  .barre-onglets a[aria-current="page"] { color: var(--accent-texte); }
+  .barre-onglets a:active { opacity: .55; }
+
+  /* --- Bouton de remontée --- */
+  .bouton-haut {
+    display: flex; align-items: center; justify-content: center;
+    position: fixed; right: 1rem; z-index: 29;
+    bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+    width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--ligne);
+    background: var(--fond-2); color: var(--texte-2); box-shadow: var(--ombre);
+    opacity: 0; pointer-events: none; transform: translateY(6px);
+    transition: opacity .2s ease, transform .2s ease;
+  }
+  .bouton-haut svg { width: 21px; height: 21px; }
+  .bouton-haut.visible { opacity: 1; pointer-events: auto; transform: none; }
+  body:not(.avec-barre) .bouton-haut { bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); }
+
+  /* --- Plan du chapitre : sections repliables --- */
+  .plan-outils { display: flex; justify-content: flex-end; gap: .5rem; margin: .25rem 0 .9rem; }
+  .partie { margin: 0 0 1.4rem; }
+  .article .partie-titre {
+    font-size: 1.02rem; font-weight: 650; margin: 0 0 .55rem; padding: 0 0 .4rem;
+    border-top: 0; border-bottom: 1px solid var(--ligne); letter-spacing: -.01em;
+  }
+  .partie-intro { margin-bottom: .75rem; }
+  .partie-intro > :last-child { margin-bottom: .75rem; }
+
+  details.section {
+    border: 1px solid var(--ligne); border-radius: 12px; background: var(--fond-2);
+    margin: 0 0 .5rem; overflow: hidden;
+  }
+  details.section > summary {
+    display: flex; align-items: center; gap: .65rem; cursor: pointer;
+    padding: .8rem .95rem; list-style: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  details.section > summary::-webkit-details-marker { display: none; }
+  details.section > summary::marker { content: ""; }
+  details.section > summary::before {
+    content: ""; flex: 0 0 auto; width: 8px; height: 8px; margin-left: .1rem;
+    border-right: 2px solid var(--accent); border-bottom: 2px solid var(--accent);
+    transform: rotate(-45deg); transition: transform .18s ease;
+  }
+  details.section[open] > summary::before { transform: rotate(45deg); }
+  .article details.section > summary h2,
+  .article details.section > summary h3 {
+    margin: 0; padding: 0; border: 0; font-size: .98rem; font-weight: 600;
+    text-transform: none; letter-spacing: -.005em; color: var(--texte); flex: 1;
+  }
+  details.section[open] > summary { border-bottom: 1px solid var(--ligne); }
+  .section-corps { padding: .95rem .95rem .1rem; background: var(--fond); }
+  .section-corps > :last-child { margin-bottom: .95rem; }
+  .section-corps .bloc { margin-left: -.2rem; margin-right: -.2rem; }
+
+  /* --- Tableaux transformés en blocs empilés --- */
+  .tableau-empile table, .tableau-empile thead, .tableau-empile tbody,
+  .tableau-empile tr, .tableau-empile th, .tableau-empile td { display: block; }
+  .tableau-empile { overflow: visible; }
+  .tableau-empile thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+  .tableau-empile tr {
+    border: 1px solid var(--ligne); border-radius: 10px; background: var(--fond-2);
+    padding: .2rem .8rem .5rem; margin-bottom: .5rem;
+  }
+  .tableau-empile tr:nth-child(even) td { background: transparent; }
+  .tableau-empile td {
+    border: 0; border-top: 1px solid var(--ligne); padding: .45rem 0 .1rem;
+  }
+  .tableau-empile td:first-child { border-top: 0; }
+  .tableau-empile td::before {
+    content: attr(data-label); display: block;
+    font-size: .7rem; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--texte-3); font-weight: 600; margin-bottom: .1rem;
+  }
+  .tableau-empile td[data-label=""]::before,
+  .tableau-empile td.cellule-titre::before { display: none; }
+  .tableau-empile td.cellule-titre {
+    font-weight: 650; font-size: 1rem; padding-top: .6rem;
+  }
+
+  /* --- Cartes mémo : commandes compactes, sous le pouce --- */
+  .cartes-outils { flex-direction: column; align-items: stretch; gap: .5rem; margin-bottom: .75rem; }
+  .cartes-outils .cartes-actions { display: flex; gap: .4rem; align-items: center; justify-content: space-between; margin: 0; flex-wrap: nowrap; }
+  .cartes-outils .cartes-actions label { font-size: .85rem; }
+  .cartes-compteur { justify-content: space-between; }
+  .carte { min-height: 17rem; }
+  .carte .face { padding: 1.5rem 1.2rem 2rem; font-size: 1.05rem; }
+  .carte-scene { touch-action: pan-y; }
+  .carte-scene.glisse .carte { transition: none; }
+  .cartes-reponses .bouton { padding: .85rem 1rem; font-size: 1rem; }
+  .cartes-nav { display: none; }
+  .cartes-astuce { margin: .9rem 0 0; text-align: center; font-size: .8rem; color: var(--texte-3); }
+
+  /* --- Divers --- */
+  [id] { scroll-margin-top: 4rem; }
+  .article table { font-size: .92rem; }
+  .recherche-forme { flex-direction: column; }
+  .recherche-forme .bouton { width: 100%; }
+}
+
 /* ---------- Impression ---------- */
 @media print {
-  .entete, .pied, .onglets, .sommaire, .fiche-outils, .fil, .cartes-outils, .cartes-reponses, .cartes-nav { display: none !important; }
+  .entete, .pied, .onglets, .sommaire, .fiche-outils, .fil, .cartes-outils, .cartes-reponses, .cartes-nav,
+  .barre-onglets, .bouton-haut, .barre-progression, .plan-outils { display: none !important; }
+  details.section, .section-corps { border: 0; padding: 0; background: transparent; }
+  details.section > summary::before { display: none; }
   body { background: #fff; color: #000; font-size: 11pt; }
   .principal { max-width: none; padding: 0; }
   .cours-grille { display: block; }

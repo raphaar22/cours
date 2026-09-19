@@ -45,6 +45,10 @@
     try { localStorage.setItem("theme", nouveau); } catch (e) { /* stockage indisponible */ }
   });
 
+  /* ---------- Téléphone ou ordinateur ? ---------- */
+  const petitEcran = window.matchMedia("(max-width: 979px)");
+  function estMobile() { return petitEcran.matches; }
+
   /* ---------- Outils ---------- */
   function echapper(texte) {
     return String(texte)
@@ -187,6 +191,157 @@
     });
   }
 
+  /* ---------- Barre d'onglets du bas (téléphone) ---------- */
+  const ICONES = {
+    accueil: '<path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>',
+    cours: '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>',
+    vocabulaire: '<path d="M4 6h3M4 12h3M4 18h3M10 6h10M10 12h10M10 18h10" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
+    fiche: '<path d="M6 3h9l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M14 3v5h5M9 13h7M9 17h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
+    cartes: '<rect x="3" y="7" width="13" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8 4h10a3 3 0 0 1 3 3v9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
+    donnees: '<rect x="3.5" y="4.5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M3.5 9.5h17M9.5 9.5V20M3.5 15h17" fill="none" stroke="currentColor" stroke-width="1.9"/>',
+  };
+  const COURTS = { cours: "Cours", vocabulaire: "Vocab", fiche: "Fiche", cartes: "Cartes", donnees: "Données" };
+
+  function majBarreOnglets(chap, type) {
+    const barre = document.getElementById("barre-onglets");
+    let html = '<a href="#/"><svg viewBox="0 0 24 24" aria-hidden="true">' + ICONES.accueil + "</svg><span>Accueil</span></a>";
+    html += chap.fichiers.map(function (f) {
+      return '<a href="' + lienChapitre(chap, f) + '"' + (f === type ? ' aria-current="page"' : "") + '>' +
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONES[f] || ICONES.cours) + "</svg><span>" + COURTS[f] + "</span></a>";
+    }).join("");
+    barre.innerHTML = html;
+    barre.hidden = false;
+    document.body.classList.add("avec-barre");
+  }
+  function masquerBarreOnglets() {
+    const barre = document.getElementById("barre-onglets");
+    barre.hidden = true;
+    barre.innerHTML = "";
+    document.body.classList.remove("avec-barre");
+  }
+
+  /* ---------- Barre de progression et bouton de remontée ---------- */
+  const boutonHaut = document.getElementById("bouton-haut");
+  const barreProgression = document.getElementById("barre-progression").firstElementChild;
+  boutonHaut.addEventListener("click", function () { window.scrollTo({ top: 0, behavior: "smooth" }); });
+  function majProgression() {
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    const y = window.scrollY;
+    barreProgression.style.width = (h > 40 ? Math.min(100, Math.max(0, (y / h) * 100)) : 0) + "%";
+    boutonHaut.classList.toggle("visible", y > 700);
+  }
+  window.addEventListener("scroll", majProgression, { passive: true });
+  window.addEventListener("resize", majProgression);
+
+  /* ---------- Plan repliable (téléphone) ---------- */
+  function construireAccordeon(article) {
+    const enfants = Array.from(article.children);
+    if (!enfants.some(function (e) { return e.tagName === "H2" || e.tagName === "H3"; })) return;
+
+    const plan = document.createElement("div");
+    plan.className = "plan";
+    let groupe = null;       /* bloc d'une grande partie (h2) */
+    let cible = null;        /* où déposer le contenu courant */
+
+    function nouvelleSection(titre) {
+      const details = document.createElement("details");
+      details.className = "section";
+      const summary = document.createElement("summary");
+      summary.appendChild(titre);
+      const corps = document.createElement("div");
+      corps.className = "section-corps";
+      details.appendChild(summary);
+      details.appendChild(corps);
+      (groupe || plan).appendChild(details);
+      return corps;
+    }
+
+    enfants.forEach(function (el) {
+      if (el.tagName === "H2") {
+        groupe = document.createElement("div");
+        groupe.className = "partie";
+        plan.appendChild(groupe);
+        /* Le titre de partie reste visible ; il devient repliable s'il n'a pas de sous-section */
+        groupe._titre = el;
+        groupe._aSousSection = false;
+        cible = null;
+      } else if (el.tagName === "H3") {
+        if (groupe && !groupe._aSousSection) {
+          groupe._aSousSection = true;
+          const h2 = groupe._titre;
+          if (h2) { h2.className = "partie-titre"; groupe.insertBefore(h2, groupe.firstChild); }
+          if (groupe._intro) groupe.insertBefore(groupe._intro, null);
+        }
+        cible = nouvelleSection(el);
+      } else {
+        if (!groupe) { plan.appendChild(el); return; }          /* introduction du chapitre */
+        if (cible) { cible.appendChild(el); return; }           /* contenu d'une sous-section */
+        if (!groupe._intro) {                                   /* contenu juste sous le titre de partie */
+          groupe._intro = document.createElement("div");
+          groupe._intro.className = "partie-intro";
+          groupe.appendChild(groupe._intro);
+        }
+        groupe._intro.appendChild(el);
+      }
+    });
+
+    /* Les parties sans sous-section deviennent elles-mêmes repliables */
+    Array.from(plan.querySelectorAll(".partie")).forEach(function (g) {
+      if (g._aSousSection) {
+        if (g._titre && !g.contains(g._titre)) g.insertBefore(g._titre, g.firstChild);
+        return;
+      }
+      const details = document.createElement("details");
+      details.className = "section";
+      const summary = document.createElement("summary");
+      if (g._titre) summary.appendChild(g._titre);
+      const corps = document.createElement("div");
+      corps.className = "section-corps";
+      if (g._intro) while (g._intro.firstChild) corps.appendChild(g._intro.firstChild);
+      details.appendChild(summary);
+      details.appendChild(corps);
+      g.innerHTML = "";
+      g.appendChild(details);
+    });
+
+    article.innerHTML = "";
+    const sections = plan.querySelectorAll("details.section");
+    if (sections.length > 1) {
+      const outils = document.createElement("div");
+      outils.className = "plan-outils";
+      const bouton = document.createElement("button");
+      bouton.type = "button";
+      bouton.className = "bouton bouton-petit";
+      bouton.textContent = "Tout déplier";
+      bouton.addEventListener("click", function () {
+        const ouvrir = bouton.textContent === "Tout déplier";
+        sections.forEach(function (d) { d.open = ouvrir; });
+        bouton.textContent = ouvrir ? "Tout replier" : "Tout déplier";
+        majProgression();
+      });
+      outils.appendChild(bouton);
+      article.appendChild(outils);
+    }
+    article.appendChild(plan);
+    article.addEventListener("toggle", majProgression, true);
+  }
+
+  /* ---------- Tableaux empilés (téléphone) ---------- */
+  function preparerTableaux(racine) {
+    Array.from(racine.querySelectorAll("table")).forEach(function (table) {
+      const entetes = Array.from(table.querySelectorAll("thead th")).map(function (th) { return th.textContent.trim(); });
+      if (entetes.length < 3) return;   /* deux colonnes : le tableau tient déjà dans l'écran */
+      Array.from(table.querySelectorAll("tbody tr")).forEach(function (tr) {
+        Array.from(tr.children).forEach(function (td, i) {
+          if (i === 0 && !entetes[0]) { td.className = "cellule-titre"; return; }
+          td.setAttribute("data-label", entetes[i] || "");
+        });
+      });
+      const enveloppe = table.closest(".tableau");
+      if (enveloppe) enveloppe.classList.add("tableau-empile");
+    });
+  }
+
   /* ---------- Navigation ---------- */
   function lireRoute() {
     const hash = location.hash.replace(/^#/, "") || "/";
@@ -212,6 +367,7 @@
   /* ---------- Accueil ---------- */
   function afficherAccueil() {
     document.title = "Physique-Chimie · Terminale";
+    masquerBarreOnglets();
     const ordre = ["chimie", "physique", "annexes"];
     let html = '<section class="accueil-tete"><p class="surtitre">Terminale · spécialité</p>' +
       "<h1>Physique-Chimie</h1><p>Le cours complet, le vocabulaire, une fiche résumé et des cartes mémo pour chaque chapitre.</p>" +
@@ -259,6 +415,7 @@
     }
     html += '<div id="zone"></div>';
     principal.innerHTML = html;
+    majBarreOnglets(chap, type);
     const zone = document.getElementById("zone");
     const valeur = donnees[type];
     if (valeur === undefined) {
@@ -278,7 +435,9 @@
     article.innerHTML = rendreMarkdown(markdown);
     rendreFormules(article);
     construireSommaire(article, document.getElementById("sommaire"), chap, type);
+    if (estMobile()) { construireAccordeon(article); preparerTableaux(article); }
     allerA(section);
+    majProgression();
   }
 
   function construireSommaire(article, sommaire, chap, type) {
@@ -339,6 +498,12 @@
     if (!id) return;
     const cible = document.getElementById(id);
     if (!cible) return;
+    /* Sur téléphone la section visée peut être repliée : on l'ouvre d'abord */
+    let parent = cible.parentElement;
+    while (parent) {
+      if (parent.tagName === "DETAILS") parent.open = true;
+      parent = parent.parentElement;
+    }
     cible.scrollIntoView({ block: "start" });
     cible.classList.add("cible");
     setTimeout(function () { cible.classList.remove("cible"); }, 2000);
@@ -363,6 +528,7 @@
       dl.innerHTML = html || '<p class="vide">Aucun terme ne correspond.</p>';
       compte.textContent = visibles.length + " terme" + (visibles.length > 1 ? "s" : "");
       rendreFormules(dl);
+      majProgression();
     }
     dessiner("");
     document.getElementById("filtre-vocab").addEventListener("input", function () { dessiner(this.value); });
@@ -376,8 +542,21 @@
     article.innerHTML = rendreMarkdown(markdown);
     rendreFormules(article);
     construireSommaire(article, document.getElementById("sommaire"), chap, "fiche");
+    if (estMobile()) {
+      construireAccordeon(article);
+      preparerTableaux(article);
+      /* Sur téléphone, le bouton d'impression rejoint la ligne « Tout déplier » */
+      const outils = article.querySelector(".plan-outils");
+      const imprimer = document.getElementById("imprimer");
+      if (outils && imprimer) {
+        outils.insertBefore(imprimer, outils.firstChild);
+        const ancien = zone.querySelector(".fiche-outils");
+        if (ancien) ancien.remove();
+      }
+    }
     document.getElementById("imprimer").addEventListener("click", function () { window.print(); });
     allerA(section);
+    majProgression();
   }
 
   /* ---------- Cartes mémo ---------- */
@@ -404,7 +583,7 @@
     zone.innerHTML =
       '<div class="cartes">' +
       '<div class="cartes-outils"><div class="cartes-compteur" id="compteur"></div>' +
-      '<div class="groupe"><label><input type="checkbox" id="filtre-revoir"> Seulement « à revoir »</label>' +
+      '<div class="cartes-actions"><label><input type="checkbox" id="filtre-revoir"> ' + (estMobile() ? "À revoir" : "Seulement « à revoir »") + '</label>' +
       '<button class="bouton bouton-petit" type="button" id="melanger">Mélanger</button>' +
       '<button class="bouton bouton-petit" type="button" id="reinitialiser">Réinitialiser</button></div></div>' +
       '<div class="barre" id="barre"></div>' +
@@ -452,8 +631,10 @@
         '<div class="cartes-reponses"><button class="bouton bouton-non" type="button" id="non">À revoir</button><button class="bouton bouton-ok" type="button" id="ok">Je sais</button></div>' +
         '<div class="cartes-nav"><button class="bouton bouton-petit" type="button" id="precedent"' + (position === 0 ? " disabled" : "") + '>← Précédente</button>' +
         '<span class="aide">Espace : retourner · 1 : à revoir · 2 : je sais</span>' +
-        '<button class="bouton bouton-petit" type="button" id="suivant"' + (position >= l.length - 1 ? " disabled" : "") + ">Suivante →</button></div>";
+        '<button class="bouton bouton-petit" type="button" id="suivant"' + (position >= l.length - 1 ? " disabled" : "") + ">Suivante →</button></div>" +
+        (estMobile() ? '<p class="cartes-astuce">Touche la carte pour la retourner · balaye pour changer de carte</p>' : "");
       rendreFormules(scene);
+      installerBalayage(scene.querySelector(".carte-scene"), document.getElementById("carte"));
       document.getElementById("carte").addEventListener("click", retourner);
       document.getElementById("non").addEventListener("click", function () { marquer("revoir"); });
       document.getElementById("ok").addEventListener("click", function () { marquer("su"); });
@@ -463,6 +644,43 @@
     function retourner() {
       retournee = !retournee;
       document.getElementById("carte").classList.toggle("retournee", retournee);
+    }
+
+    /* Balayer vers la gauche : carte suivante ; vers la droite : précédente. */
+    function installerBalayage(scene2, carte) {
+      if (!scene2 || !carte) return;
+      let x0 = 0, y0 = 0, dx = 0, actif = false, glisse = false;
+      scene2.addEventListener("touchstart", function (e) {
+        if (e.touches.length !== 1) return;
+        x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+        dx = 0; actif = true; glisse = false;
+      }, { passive: true });
+      scene2.addEventListener("touchmove", function (e) {
+        if (!actif) return;
+        dx = e.touches[0].clientX - x0;
+        const dy = e.touches[0].clientY - y0;
+        if (!glisse && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) {
+          glisse = true;
+          scene2.classList.add("glisse");
+        }
+        if (glisse) carte.style.transform = (retournee ? "rotateY(180deg) " : "") + "translateX(" + (dx / 2.2) + "px)";
+      }, { passive: true });
+      scene2.addEventListener("touchend", function () {
+        if (!actif) return;
+        actif = false;
+        scene2.classList.remove("glisse");
+        carte.style.transform = "";
+        if (!glisse) return;
+        const l = liste();
+        if (dx < -55 && position < l.length - 1) aller(position + 1);
+        else if (dx > 55 && position > 0) aller(position - 1);
+        /* Un balayage ne doit pas retourner la carte */
+        carte.addEventListener("click", function bloque(ev) {
+          ev.stopPropagation(); ev.preventDefault();
+          carte.removeEventListener("click", bloque, true);
+        }, true);
+        setTimeout(function () { glisse = false; }, 0);
+      });
     }
     function aller(p) {
       const l = liste();
@@ -523,6 +741,7 @@
   /* ---------- Recherche ---------- */
   function afficherRecherche(requete) {
     document.title = "Recherche · Physique-Chimie";
+    masquerBarreOnglets();
     principal.innerHTML = '<section class="accueil-tete"><p class="fil"><a href="#/">Accueil</a> › Recherche</p><h1>Rechercher</h1>' +
       '<form class="recherche-forme" id="forme-recherche" role="search"><input type="search" name="q" value="' + echapper(requete) + '" placeholder="Un mot, une formule, une notion…" aria-label="Rechercher" autofocus><button class="bouton bouton-primaire" type="submit">Chercher</button></form></section>' +
       '<div class="resultats" id="resultats"></div>';
@@ -618,6 +837,7 @@
 
   function afficherIntrouvable() {
     document.title = "Page introuvable";
+    masquerBarreOnglets();
     principal.innerHTML = '<p class="fil"><a href="#/">Accueil</a></p><h1>Page introuvable</h1><p class="note-etat">Ce chapitre n\'existe pas (ou pas encore).</p>';
   }
 
@@ -632,6 +852,7 @@
   /* ---------- Démarrage ---------- */
   chargerContenu(function () {
     window.addEventListener("hashchange", naviguer);
+    if (petitEcran.addEventListener) petitEcran.addEventListener("change", naviguer);
     naviguer();
   });
 })();

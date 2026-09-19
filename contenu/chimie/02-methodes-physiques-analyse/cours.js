@@ -62,9 +62,21 @@ $$\log(ab) = \log(a) + \log(b) \qquad\qquad \log\left(\frac{a}{b}\right) = \log(
 
 Le pH est **faible si [H₃O⁺] est grande**, et inversement : plus une solution est acide (concentrée en H₃O⁺), plus son pH est petit.
 
-| pH | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| [H₃O⁺] (mol·L⁻¹) | 10⁻¹ | 10⁻² | 10⁻³ | 10⁻⁴ | 10⁻⁵ | 10⁻⁶ | 10⁻⁷ | 10⁻⁸ | 10⁻⁹ | 10⁻¹⁰ | 10⁻¹¹ | 10⁻¹² | 10⁻¹³ |
+| pH | [H₃O⁺] (mol·L⁻¹) |
+|---|---|
+| 1 | 10⁻¹ |
+| 2 | 10⁻² |
+| 3 | 10⁻³ |
+| 4 | 10⁻⁴ |
+| 5 | 10⁻⁵ |
+| 6 | 10⁻⁶ |
+| 7 | 10⁻⁷ |
+| 8 | 10⁻⁸ |
+| 9 | 10⁻⁹ |
+| 10 | 10⁻¹⁰ |
+| 11 | 10⁻¹¹ |
+| 12 | 10⁻¹² |
+| 13 | 10⁻¹³ |
 
 ::: exemple
 Si le pH d'une solution vaut 2,00 et si l'on **divise la concentration en ions oxonium par dix**, alors le pH de la solution vaut 3,00. En effet, la concentration en ions oxonium passe de 1,0 × 10⁻² mol·L⁻¹ à 1,0 × 10⁻³ mol·L⁻¹.

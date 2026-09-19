@@ -8,29 +8,45 @@ Valeurs de λ à 25,0 °C, en **mS·m²·mol⁻¹**. Pour la loi de Kohlrausch, 
 
 ### Cations
 
-| Cation | λ (mS·m²·mol⁻¹) | Cation | λ (mS·m²·mol⁻¹) |
-|---|---|---|---|
-| H₃O⁺ | 35,0 | Cu²⁺ | 10,7 |
-| Fe³⁺ | 20,4 | Mn²⁺ | 10,7 |
-| Al³⁺ | 18,3 | Mg²⁺ | 10,6 |
-| Pb²⁺ | 14,2 | Zn²⁺ | 10,6 |
-| Ba²⁺ | 12,7 | NH₄⁺ | 7,4 |
-| Ca²⁺ | 11,9 | K⁺ | 7,3 |
-| Fe²⁺ | 10,8 | Ag⁺ | 6,2 |
-| Ni²⁺ | 10,8 | Na⁺ | 5,0 |
+| Cation | λ (mS·m²·mol⁻¹) |
+|---|---|
+| H₃O⁺ | 35,0 |
+| Fe³⁺ | 20,4 |
+| Al³⁺ | 18,3 |
+| Pb²⁺ | 14,2 |
+| Ba²⁺ | 12,7 |
+| Ca²⁺ | 11,9 |
+| Fe²⁺ | 10,8 |
+| Ni²⁺ | 10,8 |
+| Cu²⁺ | 10,7 |
+| Mn²⁺ | 10,7 |
+| Mg²⁺ | 10,6 |
+| Zn²⁺ | 10,6 |
+| NH₄⁺ | 7,4 |
+| K⁺ | 7,3 |
+| Ag⁺ | 6,2 |
+| Na⁺ | 5,0 |
 
 ### Anions
 
-| Anion | λ (mS·m²·mol⁻¹) | Anion | λ (mS·m²·mol⁻¹) |
-|---|---|---|---|
-| HO⁻ | 19,8 | NO₃⁻ | 7,1 |
-| S₂O₃²⁻ | 17,0 | ClO₄⁻ | 6,7 |
-| SO₄²⁻ | 16,0 | MnO₄⁻ | 6,1 |
-| C₂O₄²⁻ | 14,8 | F⁻ | 5,5 |
-| CO₃²⁻ | 13,9 | HCOO⁻ | 5,5 |
-| Br⁻ | 7,8 | HCO₃⁻ | 4,5 |
-| I⁻ | 7,7 | CH₃COO⁻ | 4,1 |
-| Cl⁻ | 7,6 | C₆H₅COO⁻ | 3,2 |
+| Anion | λ (mS·m²·mol⁻¹) |
+|---|---|
+| HO⁻ | 19,8 |
+| S₂O₃²⁻ | 17,0 |
+| SO₄²⁻ | 16,0 |
+| C₂O₄²⁻ | 14,8 |
+| CO₃²⁻ | 13,9 |
+| Br⁻ | 7,8 |
+| I⁻ | 7,7 |
+| Cl⁻ | 7,6 |
+| NO₃⁻ | 7,1 |
+| ClO₄⁻ | 6,7 |
+| MnO₄⁻ | 6,1 |
+| F⁻ | 5,5 |
+| HCOO⁻ | 5,5 |
+| HCO₃⁻ | 4,5 |
+| CH₃COO⁻ | 4,1 |
+| C₆H₅COO⁻ | 3,2 |
 
 ## Indicateurs colorés acido-basiques
 
@@ -69,23 +85,39 @@ Valeurs à 25 °C (notion vue plus tard dans l'année ; le tableau est là pour 
 
 ## Lettres grecques utiles en physique-chimie
 
-| Nom | Lettre | Nom | Lettre |
-|---|---|---|---|
-| alpha | α | nu | ν |
-| bêta | β | pi | π |
-| gamma | γ | rhô | ρ |
-| delta | δ, Δ (majuscule) | sigma | σ, Σ (majuscule) |
-| epsilon | ε | tau | τ |
-| êta | η | phi | φ, Φ (majuscule) |
-| thêta | θ | chi | χ |
-| lambda | λ | psi | ψ |
-| mu | μ | oméga | ω, Ω (majuscule) |
+| Nom | Lettre |
+|---|---|
+| alpha | α |
+| bêta | β |
+| gamma | γ |
+| delta | δ, Δ (majuscule) |
+| epsilon | ε |
+| êta | η |
+| thêta | θ |
+| lambda | λ |
+| mu | μ |
+| nu | ν |
+| pi | π |
+| rhô | ρ |
+| sigma | σ, Σ (majuscule) |
+| tau | τ |
+| phi | φ, Φ (majuscule) |
+| chi | χ |
+| psi | ψ |
+| oméga | ω, Ω (majuscule) |
 
 ## Chaînes carbonées et racines
 
-| Nombre d'atomes de carbone | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
-|---|---|---|---|---|---|---|---|---|
-| Racine | méthan | éthan | propan | butan | pentan | hexan | heptan | octan |
+| Nombre d'atomes de carbone | Racine |
+|---|---|
+| 1 | méthan |
+| 2 | éthan |
+| 3 | propan |
+| 4 | butan |
+| 5 | pentan |
+| 6 | hexan |
+| 7 | heptan |
+| 8 | octan |
 
 ## Familles organiques et nomenclature
 
